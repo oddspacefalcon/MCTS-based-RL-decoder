@@ -1,5 +1,7 @@
 # standard libraries
 import numpy as np
+from numpy import unravel_index
+
 import random
 import time
 from collections import namedtuple, Counter
@@ -17,7 +19,7 @@ from .toric_model import Action
 from .toric_model import Perspective
 from .Replay_memory import Replay_memory_uniform, Replay_memory_prioritized
 # import networks 
-from NN import NN_11, NN_17
+from NN import NN_11, NN_15, NN_17
 from ResNet import ResNet18, ResNet34, ResNet50, ResNet101, ResNet152
 from .util import incremental_mean, convert_from_np_to_tensor, Transition
 from .MCTS import MCTS
@@ -118,9 +120,16 @@ class RL():
         samples_in_memory = 0
         iteration = 0
         generated_errors = 0
+        
+        # trained network to guide MCTS
+        NN_file_name = 'Size_9_NN_17'
+        guide_path = 'drive/My Drive/MCTS-Decoder/network/'+str(NN_file_name)+'.pt'
+        guiding_model = torch.load(guide_path, map_location='cpu')
+        guiding_model = guiding_model.to(self.device)
 
         # main loop over training steps 
         while iteration < training_steps:
+            
             num_of_steps_per_episode = 0
 
             # initialize syndrom
@@ -135,12 +144,13 @@ class RL():
             #self.toric.plot_toric_code(self.toric.current_state, 'initial_syndrom')
 
             # define mcts object
-            mcts = MCTS(deepcopy(self.model), self.device, self.num_simulations, self.epsilon, self.discount_factor, self.grid_shift)
+            mcts = MCTS(guiding_model, self.device, self.num_simulations, self.epsilon, self.discount_factor, self.grid_shift)
 
             old_tree = None
             loop_check = set()
             # solve one episode
             while terminal_state == 1 and num_of_steps_per_episode < self.max_nbr_actions_per_episode and iteration < training_steps:
+                #print('Iteration:', iteration)
                 num_of_steps_per_episode += 1
                 iteration += 1
 
@@ -163,7 +173,7 @@ class RL():
                     self.toric.step(a)
 
                 loop_check.add(np.array_str(self.toric.current_state))
-
+                
                 # take step
                 self.toric.step(action)
                 self.toric.current_state = self.toric.next_state
@@ -172,7 +182,12 @@ class RL():
                 #self.toric.plot_toric_code(self.toric.current_state, 'step_'+str(num_of_steps_per_episode))
 
                 # save transitions in memory
+                q_temp = -1e6
                 for (s, a), (perspective, Q) in tree.visited_PQ.items():
+                    #if Q > q_temp:
+                    #    q_temp = Q 
+                    #    a_temp = a
+                    #    perspective_temp = perspective
                     self.memory.save((a, perspective, Q), 10000)  # max priority
                     samples_in_memory += 1
 
@@ -195,7 +210,7 @@ class RL():
                 samples_in_memory = 0
 
 
-    def select_action_prediction(self):
+    def select_action_prediction(self, loop_check):
         # set network in evluation mode 
         self.model.eval()
         # generate perspectives 
@@ -209,13 +224,27 @@ class RL():
         batch_position_actions = perspectives.position
         # choose action 
         with torch.no_grad():
+            
+            action = None
             qvals = self.model(batch_perspectives)
             qvals = np.array(qvals.cpu())
-            row, col = np.where(qvals == np.max(qvals))
-            perspective = row[0]
-            max_q_action = col[0] + 1
-            best_action = Action(batch_position_actions[perspective], max_q_action)
-        return best_action
+         
+            while action is None:
+                row, col = np.where(qvals == np.max(qvals))
+                perspective = row[0]
+                max_q_action = col[0] + 1
+                a = Action(batch_position_actions[perspective], max_q_action)
+                self.toric.step(a)
+                if np.array_str(self.toric.next_state) not in loop_check:
+                    action = a
+                else:
+                    index_max = unravel_index(qvals.argmax(), qvals.shape)
+                    qvals[index_max[0]][index_max[1]] = -1e6
+                self.toric.step(a)
+
+            loop_check.add(np.array_str(self.toric.current_state))
+
+        return action, loop_check
 
 
     def prediction(self, num_of_predictions=1, num_of_steps=50, PATH=None, plot_one_episode=False, 
@@ -228,12 +257,14 @@ class RL():
         error_corrected_list = np.zeros(len(prediction_list_p_error))
         average_number_of_steps_list = np.zeros(len(prediction_list_p_error))
         failed_syndroms = []
+
         # loop through different p_error
         for i, p_error in enumerate(prediction_list_p_error):
             ground_state = np.ones(num_of_predictions, dtype=bool)
             error_corrected = np.zeros(num_of_predictions)
             mean_steps_per_p_error = 0
             for j in range(num_of_predictions):
+                #print('Prediction nr:', j)
                 num_of_steps_per_episode = 0
                 prev_action = 0
                 terminal_state = 0
@@ -247,9 +278,10 @@ class RL():
                 
                 init_qubit_state = deepcopy(self.toric.qubit_matrix)
                 # solve syndrome
+                loop_check = set()
                 while terminal_state == 1 and num_of_steps_per_episode < num_of_steps:
                     num_of_steps_per_episode += 1
-                    action = self.select_action_prediction()
+                    action, loop_check = self.select_action_prediction(loop_check)
                     self.toric.step(action)
                     self.toric.current_state = self.toric.next_state
                     terminal_state = self.toric.terminal_state(self.toric.current_state)
@@ -274,7 +306,8 @@ class RL():
             ground_state_change = (num_of_predictions - np.sum(ground_state)) / num_of_predictions
             ground_state_list[i] =  1 - ground_state_change
             average_number_of_steps_list[i] = np.round(mean_steps_per_p_error, 1)
-
+            
+        
         return error_corrected_list, ground_state_list, average_number_of_steps_list, failed_syndroms, prediction_list_p_error
 
 
@@ -284,7 +317,7 @@ class RL():
 
         best_win_rate = 0
         
-        data_all = np.zeros((1, 17))
+        data_all = np.zeros((1, 6))
 
         training_time = 0
         prediction_time = 0
@@ -304,16 +337,21 @@ class RL():
             # evaluate network
             error_corrected_list, ground_state_list, average_number_of_steps_list, failed_syndroms, prediction_list_p_error = self.prediction(num_of_predictions=num_of_predictions, 
                                                                                                                                                                         prediction_list_p_error=[self.p_error],                                                                                                                                                                        save_prediction=True,
-                                                                                                                                                                        num_of_steps=num_of_steps_prediction)
+                                                                                                                                                        num_of_steps=num_of_steps_prediction)
             
             prediction_time += time.time() - t0
 
             win_rate = (num_of_predictions - len(failed_syndroms)/2) / num_of_predictions
-
+ 
             print('prediction, epoch: ', i+1, 'prediction time:', prediction_time, 's', 'win rate:', win_rate)
+            print('win rate', win_rate)
+            print('P error:', self.p_error)
+            print('error_corrected_list', error_corrected_list) 
+            print('=====================================')
 
-            data_all = np.append(data_all, np.array([[self.system_size, self.network_name, i+1, self.replay_memory, self.device, self.learning_rate, optimizer,
-            training_steps * (i+1), prediction_list_p_error[0], num_of_predictions, len(failed_syndroms)/2, error_corrected_list[0], ground_state_list[0], average_number_of_steps_list[0], self.p_error, win_rate, training_time]]), axis=0)
+
+            data_all = np.append(data_all, np.array([[self.system_size, i+1,
+            training_steps * (i+1), prediction_list_p_error[0], ground_state_list[0], win_rate]]), axis=0)
 
 
             if win_rate > self.increase_p_error_win_rate and self.p_error < self.p_error_end:
@@ -321,7 +359,7 @@ class RL():
 
             # save training settings in txt file 
             np.savetxt(directory_path + '/data_all.txt', data_all, 
-                header='system_size, network_name, epoch, replay_memory, device, learning_rate, optimizer, total_training_steps, prediction_list_p_error, number_of_predictions, number_of_failed_syndroms, error_corrected_list, ground_state_list, average_number_of_steps_list, p_error_train, win_rate, training_time', delimiter=',', fmt="%s")
+                header='system_size, epoch, total_training_steps, prediction_list_p_error, ground_state_list, win_rate', delimiter=',', fmt="%s")
             # save network
             step = (i + 1) * training_steps
             PATH = directory_path + '/network_epoch/size_{2}_{1}_epoch_{0}.pt'.format(

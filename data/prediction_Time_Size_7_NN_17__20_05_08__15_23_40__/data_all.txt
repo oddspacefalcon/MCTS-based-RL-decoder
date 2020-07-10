@@ -1,3 +1,0 @@
-# network, error corrected, ground state conserved, average number of steps, number of failed syndroms, win_rate, runtime (h)
-0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
-Size_7_NN_17,1,[1.],[1.],[0.],0.0,1.0,7.2144458293914795
