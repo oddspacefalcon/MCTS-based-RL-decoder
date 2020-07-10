@@ -9,7 +9,7 @@ Down bellow a successful error correction on a toric code of size d=7 is illustr
 I have managed to improve performence on the decoders for size d=9 and d=11. In the graph below a comparison is made between the old agents from the bachelor thesis and the newly improved. Here P<sub>s</sub> reperesents the success rate of the decoder, in other words how often it managed to eliminate all the defects without causing a non trivial loop. The rate of error P<sub>e</sub> is the probability of an error occuring in a specific place on the toric code and P<sub>e</sub>/3 = p<sub>x</sub> = p<sub>y</sub> = p<sub>z</sub>. As we see the new version outperformence the old version. The reason is that the old version did not allways succeed in eliminating all the defects but this version does except for d=11 for higher values of .
 ![](docs/visual/result.PNG)
 
-## Krav 
+## Requirements 
 - Python 3
  
 ### Installation 
