@@ -10,10 +10,10 @@ I have managed to improve performence on the decoders for size d=9 and d=11. In 
 ![](docs/visual/result.PNG)
 
 ## Requirements 
-- Python 3
-numpy 1.14.0
-matplotlib 2.1.0
-torch 1.0.0
+Python 3  
+numpy 1.14.0  
+matplotlib 2.1.0  
+torch 1.0.0  
  
 ### Installation 
 - The libraries necessary are matplotlib, numpy and pytorch
