@@ -16,7 +16,7 @@ I have managed to improve performence on the decoders for size d=9 and d=11. In 
 ### Installation 
 - The libraries necessary are matplotlib, numpy and pytorch
 
-## Hur används simmulatorn?
+## How to use this repository
 There are three example scripts
 - train_script.py
 - prediction_script_network.py
