@@ -8,12 +8,6 @@ Down bellow a successful error correction on a toric code of size d=7 is illustr
 ## Results so far
 I have managed to improve performence on the decoders for size d=9 and d=11. In the graph below a comparison is made between the old agents from the bachelor thesis and the newly improved. Here P<sub>s</sub> reperesents the success rate of the decoder, in other words how often it managed to eliminate all the defects without causing a non trivial loop. The rate of error P<sub>e</sub> is the probability of an error occuring in a specific place on the toric code and P<sub>e</sub>/3 = p<sub>x</sub> = p<sub>y</sub> = p<sub>z</sub>. As we see the new version outperformence the old version. The reason is that the old version did not allways succeed in eliminating all the defects but this version does except for d=11 for higher values of .
 ![](docs/visual/result.PNG)
-
-## Requirements 
-Python 3  
-numpy 1.14.0  
-matplotlib 2.1.0  
-torch 1.0.0  
  
 ### Installation 
 - The libraries necessary are matplotlib, numpy and pytorch
@@ -29,4 +23,3 @@ train_script trains an agent to solve a syndrom (as a decoder). All hyperparamet
 prediction_script_network uses a trained agent to solve a syndrom.
 
 prediction_script_MCTS uses a trained agent to guide treesearch which in turns determines the moves to make in order to solve the syndrom. 
-
