@@ -1,7 +1,7 @@
 # Deep Q-learning decoder trained using MCTS 
 This is a continuation on the work done in my [bachelor thesis](https://odr.chalmers.se/bitstream/20.500.12380/300901/1/TIFX04-20-73%2c%20kandidatrapport.pdf) and an attempt to improve performance of the deep Q-learning decoders (trained artificial neural networks).  
 
-## Background
+## Short background
 Down below a successful error correction on a toric code of size d=7 is illustrated. The X,Y, and Z errors are also shown along with their resulting plaquette and vertex defects (the small dots). Observe that if the decoder places for an example a X on a X error, the error disappears. The goal of the decoder is to eliminate all the defects on the toric code by applying Pauli operators X,Y or Z without causing a non-trivial chain of errors (chain which span over the entire toric code). The input for the decoder is however only the toric code with visible defects, making the error correction a difficult problem to solve. More detail regarding this is found in the bachelor thesis or in the paper by [Fitzek et. al ](https://arxiv.org/pdf/1912.12919.pdf). 
 
 ![](docs/visual/toric_code_gif.gif)
