@@ -2,7 +2,7 @@
 This is a continuation on the work done in my [bachelor thesis](https://odr.chalmers.se/bitstream/20.500.12380/300901/1/TIFX04-20-73%2c%20kandidatrapport.pdf) and an attempt to improve performence of the trained artificial neural networks.  
 
 ## Background
-Down bellow a successful error correction on a toric code of size d=7 is illustrated. The X,Y, and Z errors are also illustrated along with their resulting plaquette and vertex defects (the small dots). The goal of the decoder is to eliminate all the defects on the toric code by applying the Pauli operators X,Y or Z without causing a non-trivial chain of errors (chain which span over the entire toric code). The input for the decoder is however only the toric code with visible defects, making the error correction a difficult problem to solve. More detail regarding this is found in the bachelor thesis or in the paper by [Fitzek et. al ](https://arxiv.org/pdf/1912.12919.pdf). 
+Down bellow a successful error correction on a toric code of size d=7 is illustrated. The X,Y, and Z errors are also shown along with their resulting plaquette and vertex defects (the small dots). The goal of the decoder is to eliminate all the defects on the toric code by applying Pauli operators X,Y or Z without causing a non-trivial chain of errors (chain which span over the entire toric code). The input for the decoder is however only the toric code with visible defects, making the error correction a difficult problem to solve. More detail regarding this is found in the bachelor thesis or in the paper by [Fitzek et. al ](https://arxiv.org/pdf/1912.12919.pdf). 
 ![](docs/visual/toric_code_gif.gif)
 
 ## Results so far
@@ -26,6 +26,4 @@ train_script trains an agent to solve a syndrom (as a decoder). All hyperparamet
 prediction_script_network uses a trained agent to solve a syndrom.
 
 prediction_script_MCTS uses a trained agent to guide treesearch which in turns determines the moves to make in order to solve the syndrom. 
-
-
 
